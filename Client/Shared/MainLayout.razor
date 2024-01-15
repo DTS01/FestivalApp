@@ -1,0 +1,43 @@
+﻿@using FestivalApp.Client.Authentication
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized>
+                    <a @onclick="Logout" href="javascript:void(0)">Logout</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login">Login</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    // Logout method triggered when the user clicks the logout link
+    private async Task Logout()
+    {
+        // Retrieve the custom authentication state provider
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+
+        // Update the authentication state to null, effectively logging out the user
+        await customAuthStateProvider.UpdateAuthenticationState(null);
+
+        // Navigate to the home page after logging out
+        navManager.NavigateTo("/", true);
+    }
+}

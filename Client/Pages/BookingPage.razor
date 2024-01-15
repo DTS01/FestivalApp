@@ -1,0 +1,143 @@
+﻿@page "/Booking"
+@attribute [Authorize(Roles = "Coordinator, Volunteer")]
+@using FestivalApp.Client.Authentication
+@using FestivalApp.Shared.Models
+@using System.Net.Http.Headers
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject NavigationManager navManager
+
+<h3>Create Booking</h3>
+
+<EditForm Model="newBooking" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <!-- Add a dropdown menu for selecting shifts -->
+    <div class="form-group">
+        <label for="shifts" class="bold-label">Select Shift:</label>
+        <select @bind="SelectedShiftName" @bind:event="onchange" class="form-control">
+            @foreach (var shift in shifts)
+            {
+                <option value="@shift.Navn">@shift.Navn</option>
+            }
+        </select>
+    </div>
+
+    <!-- Display the description for the selected shift here -->
+    <div class="form-group">
+        <label for="shiftDescription" class="bold-label">Description:</label>
+        <p id="shiftDescription" class="form-control-plaintext">@selectedShiftDescription</p>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Name and Telephone Number columns -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="name" class="bold-label">Name:</label>
+                    <InputText id="name" class="form-control" @bind-Value="newBooking.Name" required />
+                </div>
+                <div class="form-group">
+                    <label for="phonenr" class="bold-label">Phone Number:</label>
+                    <InputText id="phonenr" class="form-control" @bind-Value="newBooking.Phonenr" required />
+                </div>
+            </div>
+
+            <!-- Date column -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="startDate" class="bold-label">Start Date:</label>
+                    <input type="date" id="startDate" @bind="tempStartDate" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label for="endDate" class="bold-label">End Date:</label>
+                    <input type="date" id="endDate" @bind="tempEndDate" class="form-control" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Booking button -->
+    <button type="submit" class="btn btn-primary add-booking-button"> Create Booking </button>
+
+</EditForm>
+
+@code {
+    // List of `Shift` objects to store shifts retrieved from the API
+    private List<Shift> shifts = new List<Shift>();
+
+    // A new `Booking` instance to bind user input on the form
+    private Booking newBooking = new Booking();
+
+    // String to store and display the description of the selected shift
+    private string selectedShiftDescription;
+
+    // Temporary properties to handle user input for dates
+    private DateTime tempStartDate = DateTime.Today;
+    private DateTime tempEndDate = DateTime.Today.AddDays(1);
+
+    // Property to bind the selected shift name from the dropdown and update the description
+    private string SelectedShiftName
+    {
+        get => newBooking.ShiftName;
+        set
+        {
+            if (newBooking.ShiftName != value)
+            {
+                newBooking.ShiftName = value;
+                OnShiftSelected(value);
+            }
+        }
+    }
+
+    // Asynchronous method called when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+            shifts = await Http.GetFromJsonAsync<List<Shift>>("api/schifts");
+
+            if (shifts.Any())
+            {
+                // Set default values for the first shift in the list
+                var firstShift = shifts.First();
+                SelectedShiftName = firstShift.Navn;
+                selectedShiftDescription = firstShift.Lang_beskr;
+                // Generate a random BookingID for the new booking
+                GenerateRandomBookingId();
+            }
+    }
+
+    // Generate a random BookingID
+    private void GenerateRandomBookingId()
+    {
+        Random rnd = new Random();
+        newBooking.BookingID = rnd.Next(1000, 10000).ToString();
+    }
+
+    // Update the selected shift description and generate a new BookingID
+    private void OnShiftSelected(string shiftName)
+    {
+        GenerateRandomBookingId();
+        selectedShiftDescription = shifts.FirstOrDefault(s => s.Navn == shiftName)?.Lang_beskr;
+    }
+
+    // Handle the form submission when all input fields are valid
+    private async Task HandleValidSubmit()
+    {
+        // Convert the temporary dates to the "yyyy-MM-dd" string format
+        newBooking.StartDate = tempStartDate.ToString("yyyy-MM-dd");
+        newBooking.EndDate = tempEndDate.ToString("yyyy-MM-dd");
+
+        // Send the new booking to the API and navigate to the booking list if successful
+        var response = await Http.PostAsJsonAsync("api/bookings", newBooking);
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/shiftlist");
+        }
+        else
+        {
+            // Handle an error in case of submission failure, such as displaying an error message
+        }
+    }
+}

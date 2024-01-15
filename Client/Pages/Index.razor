@@ -1,0 +1,50 @@
+﻿@page "/"
+@inject IJSRuntime js 
+
+<PageTitle>Inedex</PageTitle>
+
+<!-- Conditional rendering based on user authentication status -->
+<AuthorizeView>
+    <!-- Display content if the user is authenticated -->
+    <Authorized>
+        <h1>Hello, @context.User.Identity.Name!</h1>
+    </Authorized>
+    <!-- Display content if the user is not authenticated (Guest) -->
+    <NotAuthorized>
+        <h1>Hello, Guest!</h1>
+    </NotAuthorized>
+</AuthorizeView>
+
+<!-- Welcome message for the Music Festival Shift Booking App -->
+Welcome to the Music Festival Shift Booking App.
+
+<!-- Survey prompt component -->
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+<!-- Conditional rendering based on user authentication status -->
+<AuthorizeView>
+    <!-- Display content if the user is authenticated -->
+    <Authorized>
+        <br /><br />
+        <!-- Button to trigger an alert message for authenticated users -->
+        <button class="btn btn-outline-primary" @onclick="DisplayGreetingAlert">An Alert Message!</button>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    // Method to display a greeting alert with the user's name
+    private async Task DisplayGreetingAlert()
+    {
+        // Retrieve the authentication state
+        var authState = await authenticationState;
+
+        // Compose a reminder message with the user's name
+        var message = $"Hello {authState.User.Identity.Name}, this is a reminder that we need more men on morning shifts!";
+
+        // Invoke a JavaScript alert with the composed message
+        await js.InvokeVoidAsync("alert", message);
+    }
+}

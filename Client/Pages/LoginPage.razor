@@ -1,0 +1,67 @@
+﻿@page "/login"
+@using FestivalApp.Client.Authentication
+@using FestivalApp.Shared.Models
+@using System.Net
+@inject HttpClient httpClient
+@inject IJSRuntime js
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+
+<!-- Login form using Bootstrap classes for styling -->
+<div class="row">
+    <div class="col-lg-4 offset-lg-4 pt-4 pb-4 border">
+        <div class="mb-3 text-center">
+            <h3>Login</h3>
+        </div>
+        <div class="mb-3">
+            <label>User Name</label>
+            <!-- Input field for user name with two-way binding to the loginRequest.UserName property -->
+            <input @bind="loginRequest.UserName" class="form-control" placeholder="User Name" />
+        </div>
+        <div class="mb-3">
+            <label>Password</label>
+            <!-- Input field for password with two-way binding to the loginRequest.Password property -->
+            <input @bind="loginRequest.Password" type="password" class="form-control" placeholder="Password" />
+        </div>
+        <div class="mb-3 d-grid gap-2">
+            <!-- Button to trigger the authentication process on click -->
+            <button @onclick="Authenticate" class="btn btn-primary">Login</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Model representing the login request
+    private LoginRequest loginRequest = new LoginRequest();
+
+    // Method to handle the authentication process
+    private async Task Authenticate()
+    {
+        // Send a POST request to the login API endpoint with the provided loginRequest
+        var loginResponse = await httpClient.PostAsJsonAsync<LoginRequest>("/api/Account/login", loginRequest);
+
+        // Check if the login request was successful
+        if (loginResponse.IsSuccessStatusCode)
+        {
+            // Deserialize the user session from the response content
+            var userSession = await loginResponse.Content.ReadFromJsonAsync<UserSession>();
+
+            // Retrieve the custom authentication state provider
+            var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+
+            // Update the authentication state with the obtained user session
+            await customAuthStateProvider.UpdateAuthenticationState(userSession);
+
+            // Navigate to the home page upon successful authentication
+            navManager.NavigateTo("/", true);
+        }
+        // Handle unauthorized access (invalid credentials)
+        else if (loginResponse.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            // Display an alert for invalid user name or password
+            await js.InvokeVoidAsync("alert", "Invalid User Name or Password");
+            return;
+        }
+    }
+}
+

@@ -1,0 +1,19 @@
+﻿<CascadingAuthenticationState>
+    <!-- CascadingAuthenticationState component to propagate authentication state -->
+    <Router AppAssembly="@typeof(App).Assembly">
+        <!-- Router component to handle routing using the specified AppAssembly -->
+        <Found Context="routeData">
+            <!-- Display content for found routes -->
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <!-- FocusOnNavigate to focus on the first h1 element after navigation -->
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <!-- Display content for not found routes -->
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

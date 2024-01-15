@@ -1,0 +1,68 @@
+﻿@page "/bookinglist"
+@using FestivalApp.Shared.Models;
+@attribute [Authorize(Roles = "Coordinator")]
+@inject NavigationManager NavigationManager;
+@inject HttpClient http;
+
+
+
+<PageTitle>Bookinng List</PageTitle>
+
+<h1 class="mb-3 mt-3">Booking List</h1>
+
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Booking ID</th>
+            <th>Name</th>
+            <th>Phone nr</th>
+            <th>Shift Name</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th></th> <!-- Empty column for delete button -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var booking in bookings) // Loop through the list of bookings
+        {
+            <tr>
+                <td>@booking.BookingID</td>
+                <td>@booking.Name</td>
+                <td>@booking.Phonenr</td>
+                <td>@booking.ShiftName</td>
+                <td>@booking.StartDate</td>
+                <td>@booking.EndDate</td>
+                <td>
+                    <button class="btn btn-danger" @onclick="() => DeleteBooking(booking.BookingID)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-secondary" @onclick="NavigateToAddBooking">Add New Booking</button>
+
+@code {
+    private List<Booking> bookings = new List<Booking>(); // Initialize a list to store booking data
+
+    // Execute this method when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        bookings = await http.GetFromJsonAsync<List<Booking>>("api/bookings"); // Fetch booking data from the API and populate the list
+    }
+
+    // Method to navigate to the "Add Booking" page
+    private void NavigateToAddBooking()
+    {
+        NavigationManager.NavigateTo("/Booking");
+    }
+
+    // Method to delete a booking
+
+    private async Task DeleteBooking(string bookingId)
+    {
+        await http.DeleteAsync($"api/bookings/{bookingId}"); // Send a DELETE request to the API to delete the booking
+        bookings.RemoveAll(b => b.BookingID == bookingId); // Remove the deleted booking from the local list
+    }
+}
